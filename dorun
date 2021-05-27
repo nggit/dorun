@@ -1,0 +1,127 @@
+#!/usr/bin/env sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+# dorun - running desktop applications inside a docker container has never been easier
+# https://github.com/gnulinuxid/dorun
+# Copyright (c) 2021 nggit.
+
+# see: docker image ls
+IMAGE="debian"
+# IMAGE="centos"
+
+# default command
+CMD="bash"
+
+# ----------------
+_HOME=$HOME/.dorun
+CONTAINER=dorun_$( printf "%s" "$IMAGE" | tr -c 0-9A-Za-z _ )
+
+if [ $# -gt 0 ]; then
+    COMMAND=$*
+else
+    COMMAND=$CMD
+fi
+
+docreate() {
+    [ "$( id -u )" -eq 0 ] && echo "Untuk menjalankan dorun pertama kali, jangan gunakan root." 1>&2 && exit 1
+    [ -e "$_HOME" ] || mkdir "$_HOME" || exit 1
+    printf "Membuat container %s...\n" "$CONTAINER"
+    docker create -it --privileged \
+        --entrypoint /usr/bin/env \
+        --name "$CONTAINER" \
+        --network host \
+        -u "$( id -u ):$( id -g )" \
+        -v /dev:/dev \
+        -v /tmp/.X11-unix:/tmp/.X11-unix \
+        -v "$HOME/.Xauthority:$HOME/.Xauthority" \
+        -v "$HOME/.asoundrc:$HOME/.asoundrc" \
+        -v "$HOME/Documents:$HOME/Documents" \
+        -v "$HOME/Downloads:$HOME/Downloads" \
+        -v "$HOME/Music:$HOME/Music" \
+        -v "$HOME/Pictures:$HOME/Pictures" \
+        -v "$HOME/Videos:$HOME/Videos" \
+        -v "$_HOME:$HOME" \
+        "$IMAGE" sh > /dev/null 2>&1
+}
+
+doexec() {
+    [ "$( id -u )" -eq 0 ] && printf "%b\n" "\033[93mHarap hati-hati. Anda menggunakan hak akses root.\033[0m"
+    docker exec $( [ "$IS_SHELL" -eq 1 ] && printf "%s" "-it" ) --privileged -u "$( id -u ):$( id -g )" \
+        "$CONTAINER" \
+        sh -c "export DISPLAY=$DISPLAY; export HOME=$HOME; cd; \
+            [ $IS_SHELL -eq 1 ] && [ -r /etc/motd ] && cat /etc/motd; \
+            if command -v ${COMMAND%% *} > /dev/null 2>&1; then $COMMAND; \
+            else echo ${COMMAND%% *} tidak ditemukan di $CONTAINER 1>&2; sh; fi \
+        "
+}
+
+dostart() {
+    printf "Memulai container %s...\n" "$CONTAINER"
+    docker container start "$CONTAINER" > /dev/null
+}
+
+dostop() {
+    printf "Menghentikan container %s...\n" "$CONTAINER"
+    docker container stop "$CONTAINER" > /dev/null
+}
+
+doremove() {
+    printf "Menghapus container %s...\n" "$CONTAINER"
+    docker container rm "$CONTAINER" > /dev/null
+}
+
+show_help() {
+    cat << EOF
+dorun - https://github.com/gnulinuxid/dorun
+
+Penggunaan:
+  dorun [ARG...]
+  ./dorun [ARG...]
+
+ARG...:
+  COMMAND        contoh: dorun /dir/prog
+                         dorun firefox
+                         dorun rofi -show run
+  -s, --stop     menghentikan container: $CONTAINER
+  -c, --clean    membersihkan container: $CONTAINER
+  -h, --help     untuk melihat bantuan ini
+
+Tanpa ARG..., dorun akan menjalankan perintah standar yaitu: $CMD
+Pastikan program harus sudah terpasang sebelum bisa dijalankan
+Anda dapat memasang program dengan masuk ke dorun sebagai root
+EOF
+}
+
+# ---------------------------------------
+case $( basename -- "${COMMAND%% *}" ) in
+    *[a-z]sh|sh)
+        IS_SHELL=1
+        ;;
+    -s|--stop)
+        dostop
+        exit $?;;
+    -c|--clean)
+        printf "Apakah anda yakin? ( 1 = Ya, Enter = Tidak ): "
+        read -r input
+        [ "$input" = 1 ] && dostop && doremove
+        exit $?;;
+    -h|--help)
+        show_help
+        exit 0;;
+    *)
+        IS_SHELL=0
+        ;;
+esac
+
+case $( docker container inspect -f "{{.State.Status}}" "$CONTAINER" 2> /dev/null ) in
+    running) doexec;;
+    exited)  dostart && doexec;;
+    *)
+        if [ -n "$( docker image ls -q "$IMAGE" )" ]; then
+            docreate && dostart && doexec
+        else
+            printf "Image %s tidak ditemukan.\n" "$IMAGE" 1>&2 && false
+        fi
+        ;;
+esac
+
+exit $?
