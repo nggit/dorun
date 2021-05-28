@@ -17,13 +17,21 @@ lalu ubah perijinan agar *executable*:
 chmod +x dorun
 ```
 ## Penggunaan
-Silahkan atur Image distro yang ingin anda gunakan. Bisa edit variabel IMAGE di file [dorun](dorun). Standarnya adalah `debian`. Image harus sudah ada. Cek dengan `docker image ls`. Image bisa dibuat dengan `Dockerfile` atau ambil langsung dari repo [Docker Hub](https://hub.docker.com/) misalnya dengan `docker pull debian`. Tidak perlu edit jika anda mengambil [Debian](https://hub.docker.com/_/debian). Langsung saja jalankan di terminal:
+Silahkan pilih Image distro yang ingin anda gunakan. Image bisa dibuat dengan `Dockerfile` atau ambil langsung dari repo [Docker Hub](https://hub.docker.com/) misalnya dengan `docker pull debian`. Lalu jalankan di terminal:
 ```
-./dorun
+./dorun --image=debian
 ```
+Perintah diatas akan masuk ke Shell. Jika sudah mempunyai program yang terpasang di Container, misal `firefox` bisa dijalankan sebagai berikut:
+```
+./dorun --image=debian firefox
+```
+Perintah diatas tentu bisa dijadikan pintasan, atau bisa pasang launcher seperti [rofi](https://github.com/davatorium/rofi) seperti pada demo berikut:
+
+![dorun](dorun.gif)
+## Troubleshoot
 Jika nama user didalam Container adalah `I have no name!` silahkan `exit` lalu jalankan dorun dengan root:
 ```
-sudo ./dorun
+sudo ./dorun --image=IMAGE
 ```
 Lalu tambahkan user sesuai dengan user di sistem utama anda, misalnya:
 ```
@@ -31,15 +39,10 @@ useradd user_anda
 ```
 Ganti juga sandi root bila perlu dengan perintah `passwd`. Sehingga nanti bisa dengan mudah berpindah ke root menggunakan `su`.
 
-Apabila ingin memasang ulang Container dari Image yang sama, bisa hapus dulu Container yang sudah dibuat oleh dorun:
-```
-./dorun --clean
-```
-Lalu jalankan ulang dorun tanpa opsi apapun, seperti diawal. Untuk melihat opsi-opsi dorun yang tersedia gunakan:
+## Bantuan
+Untuk melihat opsi-opsi dorun yang tersedia gunakan:
 ```
 ./dorun --help
 ```
 ## Peringatan
 dorun standarnya berbagi beberapa direktori dengan dengan sistem utama yaitu Documents, Downloads, dll dan bisa baca-tulis. Ini demi kemudahan tetapi saya harap anda bisa waspada. Semua hal yang anda lakukan dengan dorun sepenuhnya adalah tanggung jawab anda sendiri.
-## Demo
-![dorun](dorun.gif)
