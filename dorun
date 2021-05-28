@@ -115,7 +115,7 @@ case $( basename -- "${COMMAND%% *}" ) in
         dostop
         exit $?;;
     -c|--clean)
-        printf "Apakah anda yakin? ( 1 = Ya, Enter = Tidak ): "
+        printf "Apakah anda yakin ingin menghapus %s? ( 1 = Ya, Enter = Tidak ): " "$CONTAINER"
         read -r input
         [ "$input" = 1 ] && dostop && doremove
         exit $?;;
