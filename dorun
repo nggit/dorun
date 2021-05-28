@@ -13,13 +13,8 @@ CMD="bash"
 
 # ----------------
 _HOME=$HOME/.dorun
-CONTAINER=dorun_$( printf "%s" "$IMAGE" | tr -c 0-9A-Za-z _ )
 
-if [ $# -gt 0 ]; then
-    COMMAND=$*
-else
-    COMMAND=$CMD
-fi
+[ -r "$_HOME/dorun.conf" ] && . "$_HOME/dorun.conf"
 
 docreate() {
     [ "$( id -u )" -eq 0 ] && echo "Untuk menjalankan dorun pertama kali, jangan gunakan root." 1>&2 && exit 1
@@ -74,16 +69,21 @@ show_help() {
 dorun - https://github.com/gnulinuxid/dorun
 
 Penggunaan:
-  dorun [ARG...]
-  ./dorun [ARG...]
+  dorun [OPT] [ARG...]
+  ./dorun [OPT] [ARG...]
+
+OPT:
+  --image=IMAGE    opsi ini tidak wajib. bisa digunakan untuk mengubah sementara variabel IMAGE
+                   tanpa harus mengedit file konfigurasi di $_HOME/dorun.conf
 
 ARG...:
-  COMMAND        contoh: dorun /dir/prog
-                         dorun firefox
-                         dorun rofi -show run
-  -s, --stop     menghentikan container: $CONTAINER
-  -c, --clean    membersihkan container: $CONTAINER
-  -h, --help     untuk melihat bantuan ini
+  COMMAND          contoh: dorun /dir/prog
+                           dorun firefox
+                           dorun rofi -show run
+                           dorun --image=centos firefox
+  -s, --stop       menghentikan container: $CONTAINER
+  -c, --clean      membersihkan container: $CONTAINER
+  -h, --help       untuk melihat bantuan ini
 
 Tanpa ARG..., dorun akan menjalankan perintah standar yaitu: $CMD
 Pastikan program harus sudah terpasang sebelum bisa dijalankan
@@ -91,7 +91,22 @@ Anda dapat memasang program dengan masuk ke dorun sebagai root
 EOF
 }
 
-# ---------------------------------------
+# --------
+case $1 in
+    --image=*)
+        IMAGE=${1##*=}
+        shift
+        ;;
+esac
+
+if [ $# -gt 0 ]; then
+    COMMAND=$*
+else
+    COMMAND=$CMD
+fi
+
+CONTAINER=dorun_$( printf "%s" "$IMAGE" | tr -c 0-9A-Za-z _ )
+
 case $( basename -- "${COMMAND%% *}" ) in
     *[a-z]sh|sh)
         IS_SHELL=1
