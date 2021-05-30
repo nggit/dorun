@@ -14,7 +14,7 @@ CMD="bash"
 # ----------------
 _HOME=$HOME/.dorun
 
-[ -r "$_HOME/dorun.conf" ] && . "$_HOME/dorun.conf"
+[ -f "$_HOME/dorun.conf" ] && [ -r "$_HOME/dorun.conf" ] && . "$_HOME/dorun.conf"
 
 docreate() {
     [ "$( id -u )" -eq 0 ] && echo "Untuk menjalankan dorun pertama kali, jangan gunakan root." 1>&2 && exit 1
@@ -43,7 +43,7 @@ doexec() {
     docker exec $( [ "$IS_SHELL" -eq 1 ] && printf "%s" "-it" ) --privileged -u "$( id -u ):$( id -g )" \
         "$CONTAINER" \
         sh -c "export DISPLAY=$DISPLAY; export HOME=$HOME; cd; \
-            [ $IS_SHELL -eq 1 ] && [ -r /etc/motd ] && cat /etc/motd; \
+            [ $IS_SHELL -eq 1 ] && [ -f /etc/motd ] && [ -r /etc/motd ] && cat /etc/motd; \
             if command -v ${COMMAND%% *} > /dev/null 2>&1; then $COMMAND; \
             else echo ${COMMAND%% *} tidak ditemukan di $CONTAINER 1>&2; sh; fi \
         "
