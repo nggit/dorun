@@ -13,12 +13,17 @@ CMD="bash"
 
 # ----------------
 _HOME=$HOME/.dorun
+DORUN_CONF_FILE=$_HOME/dorun.conf
 
-[ -f "$_HOME/dorun.conf" ] && [ -r "$_HOME/dorun.conf" ] && . "$_HOME/dorun.conf"
+[ -f "$DORUN_CONF_FILE" ] && [ -r "$DORUN_CONF_FILE" ] && . "$DORUN_CONF_FILE"
 
 docreate() {
     [ "$( id -u )" -eq 0 ] && echo "Untuk menjalankan dorun pertama kali, jangan gunakan root." 1>&2 && exit 1
     [ -e "$_HOME" ] || mkdir "$_HOME" || exit 1
+    if [ ! -e "$DORUN_CONF_FILE" ]; then
+        echo "IMAGE=\$IMAGE" > "$DORUN_CONF_FILE"
+        echo "CMD=\$CMD" >> "$DORUN_CONF_FILE"
+    fi
     printf "Membuat container %s...\n" "$CONTAINER"
     docker create -it --privileged \
         --entrypoint /usr/bin/env \
@@ -74,7 +79,7 @@ Penggunaan:
 
 OPT:
   --image=IMAGE    opsi ini tidak wajib. bisa digunakan untuk mengubah sementara variabel IMAGE
-                   tanpa harus mengedit file konfigurasi di $_HOME/dorun.conf
+                   tanpa harus mengedit file konfigurasi di $DORUN_CONF_FILE
 
 ARG...:
   COMMAND          contoh: dorun /dir/prog
