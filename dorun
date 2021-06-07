@@ -14,7 +14,9 @@ CMD="bash"
 # ----------------
 _HOME=$HOME/.dorun
 DORUN_CONF_FILE=$_HOME/dorun.conf
+XAUTHORITY=${XAUTHORITY:-$HOME/.Xauthority}
 
+# shellcheck disable=SC1090
 [ -f "$DORUN_CONF_FILE" ] && [ -r "$DORUN_CONF_FILE" ] && . "$DORUN_CONF_FILE"
 
 docreate() {
@@ -24,6 +26,15 @@ docreate() {
         echo "IMAGE=\$IMAGE" > "$DORUN_CONF_FILE"
         echo "CMD=\$CMD" >> "$DORUN_CONF_FILE"
     fi
+    XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+    XDG_DOCUMENTS_DIR=$HOME/Documents
+    XDG_DOWNLOAD_DIR=$HOME/Downloads
+    XDG_MUSIC_DIR=$HOME/Music
+    XDG_PICTURES_DIR=$HOME/Pictures
+    XDG_TEMPLATES_DIR=$HOME/Templates
+    XDG_VIDEOS_DIR=$HOME/Videos
+    # shellcheck disable=SC1091
+    [ -f "$XDG_CONFIG_HOME/user-dirs.dirs" ] && [ -r "$XDG_CONFIG_HOME/user-dirs.dirs" ] && . "$XDG_CONFIG_HOME/user-dirs.dirs"
     printf "Membuat container %s...\n" "$CONTAINER"
     docker create -it --privileged \
         --entrypoint /usr/bin/env \
@@ -32,22 +43,24 @@ docreate() {
         -u "$( id -u ):$( id -g )" \
         -v /dev:/dev \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
-        -v "$HOME/.Xauthority:$HOME/.Xauthority" \
-        -v "$HOME/.asoundrc:$HOME/.asoundrc" \
-        -v "$HOME/Documents:$HOME/Documents" \
-        -v "$HOME/Downloads:$HOME/Downloads" \
-        -v "$HOME/Music:$HOME/Music" \
-        -v "$HOME/Pictures:$HOME/Pictures" \
-        -v "$HOME/Videos:$HOME/Videos" \
         -v "$_HOME:$HOME" \
+        -v "$HOME/.asoundrc:$HOME/.asoundrc" \
+        -v "$XAUTHORITY:$XAUTHORITY" \
+        -v "$XDG_DOCUMENTS_DIR:$XDG_DOCUMENTS_DIR" \
+        -v "$XDG_DOWNLOAD_DIR:$XDG_DOWNLOAD_DIR" \
+        -v "$XDG_MUSIC_DIR:$XDG_MUSIC_DIR" \
+        -v "$XDG_PICTURES_DIR:$XDG_PICTURES_DIR" \
+        -v "$XDG_TEMPLATES_DIR:$XDG_TEMPLATES_DIR" \
+        -v "$XDG_VIDEOS_DIR:$XDG_VIDEOS_DIR" \
         "$IMAGE" sh > /dev/null 2>&1
 }
 
 doexec() {
     [ "$( id -u )" -eq 0 ] && printf "%b\n" "\033[93mHarap hati-hati. Anda menggunakan hak akses root.\033[0m"
+    # shellcheck disable=SC2046
     docker exec $( [ "$IS_SHELL" -eq 1 ] && printf "%s" "-it" ) --privileged -u "$( id -u ):$( id -g )" \
         "$CONTAINER" \
-        sh -c "export DISPLAY=$DISPLAY; export HOME=$HOME; cd; \
+        sh -c "export DISPLAY=${DISPLAY:-:0}; export HOME=$HOME; export XAUTHORITY=$XAUTHORITY; cd; \
             [ $IS_SHELL -eq 1 ] && [ -f /etc/motd ] && [ -r /etc/motd ] && cat /etc/motd; \
             if command -v ${COMMAND%% *} > /dev/null 2>&1; then $COMMAND; \
             else echo ${COMMAND%% *} tidak ditemukan di $CONTAINER 1>&2; sh; fi \
