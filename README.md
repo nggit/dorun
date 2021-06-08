@@ -28,6 +28,10 @@ Perintah diatas akan masuk ke Shell. Jika sudah mempunyai program yang terpasang
 Perintah diatas tentu bisa dijadikan pintasan, atau bisa pasang launcher seperti [rofi](https://github.com/davatorium/rofi) seperti pada demo berikut:
 
 ![dorun](dorun.gif)
+## Mode Wizard
+Pada contoh perintah sebelumnya, opsi `--image=IMAGE` berarti menggunakan IMAGE tertentu. Pada "Mode Wizard" cukup menggunakan `--image` dan akan menampilkan pilihan IMAGE yang tersedia:
+
+![dorun wizard mode](wizard.gif)
 ## Troubleshoot
 Jika nama user didalam Container adalah `I have no name!` silahkan `exit` lalu jalankan dorun dengan root:
 ```

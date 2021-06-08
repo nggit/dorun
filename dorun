@@ -11,7 +11,12 @@ IMAGE="debian"
 # default command
 CMD="bash"
 
-# ----------------
+# --------------
+NORMAL="\033[0m"
+RED="\033[91m"
+GREEN="\033[92m"
+YELLOW="\033[93m"
+
 _HOME=$HOME/.dorun
 DORUN_CONF_FILE=$_HOME/dorun.conf
 XAUTHORITY=${XAUTHORITY:-$HOME/.Xauthority}
@@ -19,8 +24,15 @@ XAUTHORITY=${XAUTHORITY:-$HOME/.Xauthority}
 # shellcheck disable=SC1090
 [ -f "$DORUN_CONF_FILE" ] && [ -r "$DORUN_CONF_FILE" ] && . "$DORUN_CONF_FILE"
 
+containername() {
+    printf "dorun_%s" "$( printf "%s" "${1%:latest}" | tr -c 0-9A-Za-z _ )"
+}
+
 docreate() {
-    [ "$( id -u )" -eq 0 ] && echo "Untuk menjalankan dorun pertama kali, jangan gunakan root." 1>&2 && exit 1
+    if [ "$( id -u )" -eq 0 ]; then
+        echo "Untuk menjalankan dorun pertama kali, jangan gunakan root." 1>&2
+        exit 1
+    fi
     [ -e "$_HOME" ] || mkdir "$_HOME" || exit 1
     if [ ! -e "$DORUN_CONF_FILE" ]; then
         echo "IMAGE=\$IMAGE" > "$DORUN_CONF_FILE"
@@ -56,7 +68,7 @@ docreate() {
 }
 
 doexec() {
-    [ "$( id -u )" -eq 0 ] && printf "%b\n" "\033[93mHarap hati-hati. Anda menggunakan hak akses root.\033[0m"
+    [ "$( id -u )" -eq 0 ] && printf "%b\n" "${YELLOW}Harap hati-hati. Anda menggunakan hak akses root.$NORMAL"
     # shellcheck disable=SC2046
     docker exec $( [ "$IS_SHELL" -eq 1 ] && printf "%s" "-it" ) --privileged -u "$( id -u ):$( id -g )" \
         "$CONTAINER" \
@@ -91,8 +103,9 @@ Penggunaan:
   ./dorun [OPT] [ARG...]
 
 OPT:
-  --image=IMAGE    opsi ini tidak wajib. bisa digunakan untuk mengubah sementara variabel IMAGE
+  --image=IMAGE    opsi ini digunakan untuk mengubah sementara variabel IMAGE
                    tanpa harus mengedit file konfigurasi di $DORUN_CONF_FILE
+  -i, --image      mode wizard. menampilkan pilihan IMAGE yang tersedia
 
 ARG...:
   COMMAND          contoh: dorun /dir/prog
@@ -109,10 +122,41 @@ Anda dapat memasang program dengan masuk ke dorun sebagai root
 EOF
 }
 
-# --------
-case $1 in
+# -----------
+case ${1-} in
     --image=*)
-        IMAGE=${1##*=}
+        [ -n "${1##*=}" ] && IMAGE=${1##*=}
+        shift
+        ;;
+    -i|--image)
+        i=0; images=
+        for image in $( docker image ls --format "{{.Repository}}:{{.Tag}}:{{.ID}}" 2> /dev/null ); do
+            image=${image##*<none>:}; image=${image%:*}
+            images=${images:+$images,}$image
+            container=$( containername "$image" )
+            case $( docker container inspect -f "{{.State.Status}}" "$container" 2> /dev/null ) in
+                running) containerstatus="${GREEN}berjalan$NORMAL";;
+                exited)  containerstatus="${RED}berhenti$NORMAL";;
+                *)       container=; containerstatus=;;
+            esac
+            [ $i -eq 0 ] && printf "%-4s %-30s %-30s %s\n" "NO" "IMAGE" "CONTAINER" "STATUS"
+            printf "%-4s %-30s %-30s %b\n" "$(( i += 1 ))." "$image" "$container" "$containerstatus"
+        done
+        if [ -n "$images" ]; then
+            printf "\nSilahkan pilih ( 1 - %s ): " "$i"
+            read -r input
+            if [ -n "$input" ]; then
+                if test "$input" -gt 0 2> /dev/null && [ "$input" -le "$i" ]; then
+                    IMAGE=$( echo "$images" | cut -d , -f "$input" )
+                else
+                    echo "Pilihan salah." 1>&2
+                    exit 1
+                fi
+            else
+                echo "Tidak ada yang dipilih." 1>&2
+                exit 1
+            fi
+        fi
         shift
         ;;
 esac
@@ -123,7 +167,7 @@ else
     COMMAND=$CMD
 fi
 
-CONTAINER=dorun_$( printf "%s" "$IMAGE" | tr -c 0-9A-Za-z _ )
+CONTAINER=$( containername "$IMAGE" )
 
 case $( basename -- "${COMMAND%% *}" ) in
     *[a-z]sh|sh)
@@ -149,10 +193,10 @@ case $( docker container inspect -f "{{.State.Status}}" "$CONTAINER" 2> /dev/nul
     running) doexec;;
     exited)  dostart && doexec;;
     *)
-        if [ -n "$( docker image ls -q "$IMAGE" )" ]; then
+        if docker image inspect -f "{{.Id}}" "$IMAGE" > /dev/null; then
             docreate && dostart && doexec
         else
-            printf "Image %s tidak ditemukan.\n" "$IMAGE" 1>&2 && false
+            false
         fi
         ;;
 esac
