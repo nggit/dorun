@@ -134,8 +134,9 @@ case ${1-} in
             image=${image##*<none>:}; image=${image%:*}
             images=${images:+$images,}$image
             container=$( containername "$image" )
-            case $( docker container inspect -f "{{.State.Status}}" "$container" 2> /dev/null ) in
+            case $( docker container inspect --format "{{.State.Status}}" "$container" 2> /dev/null ) in
                 running) containerstatus="${GREEN}berjalan$NORMAL";;
+                paused)  containerstatus="${YELLOW}dijeda$NORMAL";;
                 exited)  containerstatus="${RED}berhenti$NORMAL";;
                 *)       container=; containerstatus=;;
             esac
@@ -189,15 +190,22 @@ case $( basename -- "${COMMAND%% *}" ) in
         ;;
 esac
 
-case $( docker container inspect -f "{{.State.Status}}" "$CONTAINER" 2> /dev/null ) in
+case $( docker container inspect --format "{{.State.Status}}" "$CONTAINER" 2> /dev/null ) in
     running) doexec;;
+    paused)  docker container unpause "$CONTAINER" > /dev/null && doexec;;
     exited)  dostart && doexec;;
     *)
-        if docker image inspect -f "{{.Id}}" "$IMAGE" > /dev/null; then
-            docreate && dostart && doexec
-        else
-            false
-        fi
+        image=$( docker image ls --format ":{{.Repository}}:{{.Tag}}:{{.ID}}:" 2>&1 ) && \
+        image=$( echo "$image" | grep ":$IMAGE:" 2> /dev/null )
+        case $image in
+            *$IMAGE*) docreate && dostart && doexec;;
+            "")
+                printf "Image %s tidak ditemukan.\n" "$IMAGE" 1>&2
+                false;;
+            *)
+                printf "Terjadi kesalahan: %s\n" "$image" 1>&2
+                false;;
+        esac
         ;;
 esac
 
