@@ -1,52 +1,52 @@
 # dorun
-dorun adalah sebuah helper Docker sederhana untuk mengelola Container dengan mudah. Anda bisa memasang beberapa aplikasi kesayangan didalam Container tanpa harus mengotori sistem utama anda.
-## Prasyarat
-* Layanan Docker Harus Sudah Berjalan / Aktif
+dorun is a simple Docker helper to easily manage Containers. You can install some of your favorite apps (either GUI or Non-GUI) inside Container with native experience.
+## Prerequisites
+* Docker Service Must Already be Running/Active
 
-  Sebelum bisa menjalankan dorun, layanan Docker harus sudah berjalan. Di beberapa distro cek dengan `systemctl status docker`. Silahkan pasang Docker Engine jika belum punya. Ikuti panduan di masing-masing distro. Atau coba ke https://docs.docker.com/engine/install/.
-* Bisa Menjalankan Perintah docker Tanpa root
+  Before you can run dorun, the Docker service must be running. In some distros check with `systemctl status docker`. Please install Docker Engine if you don't have one. Follow the guide on each distro. Or try https://docs.docker.com/engine/install/.
+* Can run docker commands without root
 
-  Agar bisa menjalankan perintah `docker` tanpa root, bisa tambahkan user anda ke group `docker` lalu login ulang agar diterapkan. Cara umum bisa dilihat di https://docs.docker.com/engine/install/linux-postinstall/. Nama group mungkin bisa bervariasi tergantung distro yang anda gunakan. Bisa cek dengan `cat /etc/group`. Apabila grup docker sudah tersedia disana tinggal tambahkan user anda misal dengan perintah `sudo usermod -aG docker user_anda`.
-## Instalasi
-dorun hanya sebuah skrip Shell yang mana cukup mudah untuk digunakan. Bisa unduh manual atau dengan wget:
+  In order to run the `docker` command without root, you can add your user to the `docker` group and then re-login to apply. The general method can be seen at https://docs.docker.com/engine/install/linux-postinstall/. The group name may vary depending on the distro you are using. You can check with `cat /etc/group`. If the docker group is already there, just add your user, for example with the command `sudo usermod -aG docker your_user`.
+## Installation
+dorun is just a shell script which is pretty easy to use. You can download it with wget:
 ```
 wget https://raw.githubusercontent.com/gnulinuxid/dorun/master/dorun
 ```
-lalu ubah perijinan agar *executable*:
+then change the permissions to *executable*:
 ```
 chmod +x dorun
 ```
-## Penggunaan
-Silahkan pilih Image distro yang ingin anda gunakan. Image bisa dibuat dengan `Dockerfile` atau ambil langsung dari repo [Docker Hub](https://hub.docker.com/) misalnya dengan `docker pull debian`. Lalu jalankan di terminal:
+## Usage
+Please choose the distribution image you want to use. Images can be created with `Dockerfile` or fetched directly from the [Docker Hub](https://hub.docker.com/) repo for example with `docker pull debian`. Then run in terminal:
 ```
 ./dorun --image=debian
 ```
-Perintah diatas akan masuk ke Shell. Jika sudah mempunyai program yang terpasang di Container, misal `firefox` bisa dijalankan sebagai berikut:
+The above command will enter the shell. If you already have a program installed in the Container, for example `firefox` then it can be run as follows:
 ```
 ./dorun --image=debian firefox
 ```
-Perintah diatas tentu bisa dijadikan pintasan, atau bisa pasang launcher seperti [rofi](https://github.com/davatorium/rofi) seperti pada demo berikut:
+The above command can of course be used as a shortcut, or you can install a launcher in the Container, such as [rofi](https://github.com/davatorium/rofi) as in the following demo:
 
 ![dorun](dorun.gif)
-## Mode Wizard
-Pada contoh perintah sebelumnya, opsi `--image=IMAGE` berarti menggunakan IMAGE tertentu. Pada "Mode Wizard" cukup menggunakan `--image` dan akan menampilkan pilihan IMAGE yang tersedia:
+## Wizard Mode
+In the previous command example, the `--image=IMAGE` option means using a specific IMAGE. In "Wizard Mode" just use `--image` and it will show the available IMAGE to choose:
 
 ![dorun wizard mode](wizard.gif)
 ## Troubleshoot
-Jika nama user didalam Container adalah `I have no name!` silahkan `exit` lalu jalankan dorun dengan root:
+If the username in the Container is `I have no name!` please `exit` then run dorun with root:
 ```
 sudo ./dorun --image=IMAGE
 ```
-Lalu tambahkan user sesuai dengan user di sistem utama anda, misalnya:
+Then add the user according to the user on your main system, for example:
 ```
-useradd user_anda
+useradd your_user
 ```
-Ganti juga sandi root bila perlu dengan perintah `passwd`. Sehingga nanti bisa dengan mudah berpindah ke root menggunakan `su`.
+You may also want to set a root password with the `passwd` command. So that later you can easily switch to root using `su`.
 
-## Bantuan
-Untuk melihat opsi-opsi dorun yang tersedia gunakan:
+## Help
+To see available dorun options use:
 ```
 ./dorun --help
 ```
-## Peringatan
-dorun standarnya berbagi beberapa direktori dengan dengan sistem utama yaitu Documents, Downloads, dll dan bisa baca-tulis. Ini demi kemudahan tetapi saya harap anda bisa waspada. Semua hal yang anda lakukan dengan dorun sepenuhnya adalah tanggung jawab anda sendiri.
+## Warning
+dorun by default shares several directories with the main system i.e. Documents, Downloads, etc. and is read-writeable. This is for convenience. But I hope you will be aware. Everything you do with dorun is entirely your own responsibility.

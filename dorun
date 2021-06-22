@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # SPDX-License-Identifier: GPL-2.0-or-later
 # dorun - running desktop applications inside a docker container has never been easier
-# https://github.com/gnulinuxid/dorun
+# https://github.com/nggit/dorun
 # Copyright (c) 2021 nggit.
 
 # see: docker image ls
@@ -30,7 +30,7 @@ containername() {
 
 docreate() {
     if [ "$( id -u )" -eq 0 ]; then
-        echo "Untuk menjalankan dorun pertama kali, jangan gunakan root." 1>&2
+        echo "To run dorun for the first time, don't use root." 1>&2
         exit 1
     fi
     [ -e "$_HOME" ] || mkdir "$_HOME" || exit 1
@@ -47,7 +47,7 @@ docreate() {
     XDG_VIDEOS_DIR=$HOME/Videos
     # shellcheck disable=SC1091
     [ -f "$XDG_CONFIG_HOME/user-dirs.dirs" ] && [ -r "$XDG_CONFIG_HOME/user-dirs.dirs" ] && . "$XDG_CONFIG_HOME/user-dirs.dirs"
-    printf "Membuat container %s...\n" "$CONTAINER"
+    printf "Creating container %s...\n" "$CONTAINER"
     docker create -it --privileged \
         --entrypoint /usr/bin/env \
         --name "$CONTAINER" \
@@ -68,57 +68,57 @@ docreate() {
 }
 
 doexec() {
-    [ "$( id -u )" -eq 0 ] && printf "%b\n" "${YELLOW}Harap hati-hati. Anda menggunakan hak akses root.$NORMAL"
+    [ "$( id -u )" -eq 0 ] && printf "%b\n" "${YELLOW}Please be careful. You are currently using root privileges.$NORMAL"
     # shellcheck disable=SC2046
     docker exec $( [ "$IS_SHELL" -eq 1 ] && printf "%s" "-it" ) --privileged -u "$( id -u ):$( id -g )" \
         "$CONTAINER" \
         sh -c "export DISPLAY=${DISPLAY:-:0}; export HOME=$HOME; export XAUTHORITY=$XAUTHORITY; cd; \
             [ $IS_SHELL -eq 1 ] && [ -f /etc/motd ] && [ -r /etc/motd ] && cat /etc/motd; \
             if command -v ${COMMAND%% *} > /dev/null 2>&1; then $COMMAND; \
-            else echo ${COMMAND%% *} tidak ditemukan di $CONTAINER 1>&2; sh; fi \
+            else echo ${COMMAND%% *} not found in $CONTAINER 1>&2; sh; fi \
         "
 }
 
 dostart() {
-    printf "Memulai container %s...\n" "$CONTAINER"
+    printf "Starting container %s...\n" "$CONTAINER"
     docker container start "$CONTAINER" > /dev/null
 }
 
 dostop() {
-    printf "Menghentikan container %s...\n" "$CONTAINER"
+    printf "Stopping container %s...\n" "$CONTAINER"
     docker container stop "$CONTAINER" > /dev/null
 }
 
 doremove() {
-    printf "Menghapus container %s...\n" "$CONTAINER"
+    printf "Removing container %s...\n" "$CONTAINER"
     docker container rm "$CONTAINER" > /dev/null
 }
 
 show_help() {
     cat << EOF
-dorun - https://github.com/gnulinuxid/dorun
+dorun - https://github.com/nggit/dorun
 
-Penggunaan:
+Usage:
   dorun [OPT] [ARG...]
   ./dorun [OPT] [ARG...]
 
 OPT:
-  --image=IMAGE    opsi ini digunakan untuk mengubah sementara variabel IMAGE
-                   tanpa harus mengedit file konfigurasi di $DORUN_CONF_FILE
-  -i, --image      mode wizard. menampilkan pilihan IMAGE yang tersedia
+  --image=IMAGE    this option is used to temporarily change the IMAGE variable
+                   without having to edit the configuration file in $DORUN_CONF_FILE
+  -i, --image      wizard mode. show the available IMAGE to choose
 
 ARG...:
-  COMMAND          contoh: dorun /dir/prog
-                           dorun firefox
-                           dorun rofi -show run
-                           dorun --image=centos firefox
-  -s, --stop       menghentikan container: $CONTAINER
-  -c, --clean      membersihkan container: $CONTAINER
-  -h, --help       untuk melihat bantuan ini
+  COMMAND          example: dorun /dir/prog
+                            dorun firefox
+                            dorun rofi -show run
+                            dorun --image=centos firefox
+  -s, --stop       stopping container: $CONTAINER
+  -c, --clean      removing container: $CONTAINER
+  -h, --help       to see this help
 
-Tanpa ARG..., dorun akan menjalankan perintah standar yaitu: $CMD
-Pastikan program harus sudah terpasang sebelum bisa dijalankan
-Anda dapat memasang program dengan masuk ke dorun sebagai root
+Without ARG..., dorun will run the default command which is: $CMD
+Make sure the program must be installed before it can be run
+You can install programs by starting dorun as root
 EOF
 }
 
@@ -135,26 +135,26 @@ case ${1-} in
             images=${images:+$images,}$image
             container=$( containername "$image" )
             case $( docker container inspect --format "{{.State.Status}}" "$container" 2> /dev/null ) in
-                running) containerstatus="${GREEN}berjalan$NORMAL";;
-                paused)  containerstatus="${YELLOW}dijeda$NORMAL";;
-                exited)  containerstatus="${RED}berhenti$NORMAL";;
+                running) containerstatus="${GREEN}running$NORMAL";;
+                paused)  containerstatus="${YELLOW}paused$NORMAL";;
+                exited)  containerstatus="${RED}stopped$NORMAL";;
                 *)       container=; containerstatus=;;
             esac
             [ $i -eq 0 ] && printf "%-4s %-30s %-30s %s\n" "NO" "IMAGE" "CONTAINER" "STATUS"
             printf "%-4s %-30s %-30s %b\n" "$(( i += 1 ))." "$image" "$container" "$containerstatus"
         done
         if [ -n "$images" ]; then
-            printf "\nSilahkan pilih ( 1 - %s ): " "$i"
+            printf "\nPlease choose ( 1 - %s ): " "$i"
             read -r input
             if [ -n "$input" ]; then
                 if test "$input" -gt 0 2> /dev/null && [ "$input" -le "$i" ]; then
                     IMAGE=$( echo "$images" | cut -d , -f "$input" )
                 else
-                    echo "Pilihan salah." 1>&2
+                    echo "Wrong choice." 1>&2
                     exit 1
                 fi
             else
-                echo "Tidak ada yang dipilih." 1>&2
+                echo "Nothing chosen." 1>&2
                 exit 1
             fi
         fi
@@ -178,7 +178,7 @@ case $( basename -- "${COMMAND%% *}" ) in
         dostop
         exit $?;;
     -c|--clean)
-        printf "Apakah anda yakin ingin menghapus %s? ( 1 = Ya, Enter = Tidak ): " "$CONTAINER"
+        printf "Are you sure you want to remove %s? ( 1 = Yes, Enter = No ): " "$CONTAINER"
         read -r input
         [ "$input" = 1 ] && dostop && doremove
         exit $?;;
@@ -200,10 +200,10 @@ case $( docker container inspect --format "{{.State.Status}}" "$CONTAINER" 2> /d
         case $image in
             *$IMAGE*) docreate && dostart && doexec;;
             "")
-                printf "Image %s tidak ditemukan.\n" "$IMAGE" 1>&2
+                printf "Image %s not found.\n" "$IMAGE" 1>&2
                 false;;
             *)
-                printf "Terjadi kesalahan: %s\n" "$image" 1>&2
+                printf "An error occurred: %s\n" "$image" 1>&2
                 false;;
         esac
         ;;
