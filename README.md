@@ -10,7 +10,7 @@ dorun is a simple Docker helper to easily manage Containers. You can install som
 ## Installation
 dorun is just a shell script which is pretty easy to use. You can download it with wget:
 ```
-wget https://raw.githubusercontent.com/gnulinuxid/dorun/master/dorun
+wget https://raw.githubusercontent.com/nggit/dorun/master/dorun
 ```
 then change the permissions to *executable*:
 ```
